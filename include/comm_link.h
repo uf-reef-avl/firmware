@@ -91,6 +91,18 @@ public:
     Channel F;
   };
 
+  struct AddedTorque {
+    float x;
+    float y;
+    float z;
+  };
+
+  struct TotalTorque {
+    float x;
+    float y;
+    float z;
+  };
+
   virtual void init(uint32_t baud_rate) = 0;
   virtual void receive() = 0;
 
@@ -137,6 +149,7 @@ public:
                            int16_t loop_time_us) = 0;
   virtual void send_timesync(uint8_t system_id, int64_t tc1, int64_t ts1) = 0;
   virtual void send_version(uint8_t system_id, const char * const version) = 0;
+  virtual void send_total_torque(uint8_t system_id, uint32_t timestamp_ms, float x, float y, float z) = 0;
 
   // register callbacks
 
@@ -181,6 +194,11 @@ public:
     timesync_callback_ = callback;
   }
 
+  void register_added_torque_callback(std::function<void(const AddedTorque&)> callback)
+  {
+    added_torque_callback_ = callback;
+  }
+
 protected:
   std::function<void(uint8_t)> param_request_list_callback_;
   std::function<void(uint8_t, const char * const, uint16_t)> param_request_read_callback_;
@@ -190,6 +208,7 @@ protected:
   std::function<void(const OffboardControl)> offboard_control_callback_;
   std::function<void(Command)> command_callback_;
   std::function<void(int64_t, int64_t)> timesync_callback_;
+  std::function<void(const AddedTorque&)> added_torque_callback_;
 };
 
 } // namespace rosflight_firmware

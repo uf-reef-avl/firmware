@@ -255,6 +255,10 @@ void CommandManager::set_new_rc_command(control_t new_rc_command)
   rc_command_ = new_rc_command;
 }
 
+void CommandManager::set_new_added_torque(added_torque_t new_added_torque) {
+  added_torque_ = new_added_torque;
+}
+
 void CommandManager::override_combined_command_with_rc()
 {
   new_command_ = true;

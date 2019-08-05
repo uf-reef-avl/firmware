@@ -53,6 +53,9 @@ public:
   void init(uint32_t baud_rate) override;
   void receive() override;
 
+  void send_total_torque(uint8_t system_id,
+                         uint32_t timestamp_ms,
+                         float x, float y, float z) override;
   void send_attitude_quaternion(uint8_t system_id,
                                 uint64_t timestamp_us,
                                 const turbomath::Quaternion &attitude,
@@ -103,6 +106,7 @@ private:
   void handle_msg_offboard_control(const mavlink_message_t *const msg);
   void handle_msg_rosflight_cmd(const mavlink_message_t *const msg);
   void handle_msg_timesync(const mavlink_message_t *const msg);
+  void handle_msg_added_torque(const mavlink_message_t *const msg);
   void handle_mavlink_message(void);
 
   Board& board_;

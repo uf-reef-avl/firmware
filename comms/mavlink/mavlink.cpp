@@ -56,6 +56,20 @@ void Mavlink::receive(void)
   }
 }
 
+void Mavlink::send_total_torque(uint8_t system_id,
+                                uint32_t timestamp_ms,
+                                float x, float y, float z)
+{
+  // Empty code to get rid of the timestamp not used error due to WALL
+  if (timestamp_ms)
+    timestamp_ms = 0;
+
+  mavlink_message_t msg;
+  mavlink_msg_total_torque_pack(system_id, compid_, &msg, // Can add timestamp here if we care
+                                x, y, z);
+  send_message(msg);
+}
+
 void Mavlink::send_attitude_quaternion(uint8_t system_id,
                               uint64_t timestamp_us,
                               const turbomath::Quaternion &attitude,
@@ -442,6 +456,20 @@ void Mavlink::handle_msg_offboard_control(const mavlink_message_t *const msg)
   offboard_control_callback_(control);
 }
 
+void Mavlink::handle_msg_added_torque(const mavlink_message_t *const msg)
+{
+  mavlink_added_torque_t trqe;
+  mavlink_msg_added_torque_decode(msg, &trqe);
+
+  CommLink::AddedTorque torque;
+
+  torque.x = trqe.x;
+  torque.y = trqe.y;
+  torque.z = trqe.z;
+
+  added_torque_callback_(torque);
+}
+
 void Mavlink::handle_mavlink_message(void)
 {
   switch (in_buf_.msgid)
@@ -463,6 +491,9 @@ void Mavlink::handle_mavlink_message(void)
     break;
   case MAVLINK_MSG_ID_TIMESYNC:
     handle_msg_timesync(&in_buf_);
+    break;
+  case MAVLINK_MSG_ID_ADDED_TORQUE:
+    handle_msg_added_torque(&in_buf_);
     break;
   default:
     break;

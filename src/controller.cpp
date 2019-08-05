@@ -117,10 +117,12 @@ void Controller::run()
   // Run the PID loops
   turbomath::Vector pid_output = run_pid_loops(dt_us, RF_.estimator_.state(), RF_.command_manager_.combined_control(), update_integrators);
 
+  added_torque_t added_torque = RF_.command_manager_.added_torque();
+
   // Add feedforward torques
-  output_.x = pid_output.x + RF_.params_.get_param_float(PARAM_X_EQ_TORQUE);
-  output_.y = pid_output.y + RF_.params_.get_param_float(PARAM_Y_EQ_TORQUE);
-  output_.z = pid_output.z + RF_.params_.get_param_float(PARAM_Z_EQ_TORQUE);
+  output_.x = pid_output.x + RF_.params_.get_param_float(PARAM_X_EQ_TORQUE) + added_torque.x;
+  output_.y = pid_output.y + RF_.params_.get_param_float(PARAM_Y_EQ_TORQUE) + added_torque.y;
+  output_.z = pid_output.z + RF_.params_.get_param_float(PARAM_Z_EQ_TORQUE) + added_torque.z;
   output_.F = RF_.command_manager_.combined_control().F.value;
 }
 

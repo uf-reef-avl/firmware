@@ -71,6 +71,9 @@ void CommManager::init()
                                                   this,
                                                   std::placeholders::_1,
                                                   std::placeholders::_2));
+  comm_link_.register_added_torque_callback(std::bind(&CommManager::added_torque_callback,
+                                                      this,
+                                                      std::placeholders::_1));
   comm_link_.init(static_cast<uint32_t>(RF_.params_.get_param_int(PARAM_BAUD_RATE)));
 
   sysid_ = static_cast<uint8_t>(RF_.params_.get_param_int(PARAM_SYSTEM_ID));
@@ -312,6 +315,17 @@ void CommManager::offboard_control_callback(const CommLink::OffboardControl& con
   RF_.command_manager_.set_new_offboard_command(new_offboard_command);
 }
 
+void CommManager::added_torque_callback(const CommLink::AddedTorque& added_torque)
+{
+  added_torque_t new_added_torque;
+  new_added_torque.x = added_torque.x;
+  new_added_torque.y = added_torque.y;
+  new_added_torque.z = added_torque.z;
+
+  new_added_torque.stamp_ms = RF_.board_.clock_millis();
+  RF_.command_manager_.set_new_added_torque(new_added_torque);
+}
+
 // function definitions
 void CommManager::receive(void)
 {
@@ -483,6 +497,15 @@ void CommManager::send_next_param(void)
     send_param_value(static_cast<uint16_t>(send_params_index_));
     send_params_index_++;
   }
+}
+
+void CommManager::send_total_torque(void)
+{
+  comm_link_.send_total_torque(sysid_,
+                               RF_.board_.clock_millis(),
+                               RF_.controller_.output().x,
+                               RF_.controller_.output().y,
+                               RF_.controller_.output().z);
 }
 
 CommManager::Stream::Stream(uint32_t period_us, std::function<void(void)> send_function) :

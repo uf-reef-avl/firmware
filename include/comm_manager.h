@@ -62,6 +62,7 @@ private:
     STREAM_ID_SERVO_OUTPUT_RAW,
     STREAM_ID_RC_RAW,
     STREAM_ID_LOW_PRIORITY,
+    STREAM_ID_TOTAL_TORQUE,
     STREAM_COUNT
   };
 
@@ -103,6 +104,7 @@ private:
   void command_callback(CommLink::Command command);
   void timesync_callback(int64_t tc1, int64_t ts1);
   void offboard_control_callback(const CommLink::OffboardControl& control);
+  void added_torque_callback(const CommLink::AddedTorque& torque);
 
   void send_heartbeat(void);
   void send_status(void);
@@ -115,6 +117,7 @@ private:
   void send_sonar(void);
   void send_mag(void);
   void send_low_priority(void);
+  void send_total_torque(void);
 
   // Debugging Utils
   void send_named_value_int(const char *const name, int32_t value);
@@ -134,6 +137,7 @@ private:
     Stream(0,       std::bind(&CommManager::send_output_raw, this)),
     Stream(0,       std::bind(&CommManager::send_rc_raw, this)),
     Stream(5000,    std::bind(&CommManager::send_low_priority, this)),
+    Stream(0,       std::bind(&CommManager::send_total_torque, this)),
   };
 
 public:
