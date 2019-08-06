@@ -137,7 +137,7 @@ private:
     Stream(0,       std::bind(&CommManager::send_output_raw, this)),
     Stream(0,       std::bind(&CommManager::send_rc_raw, this)),
     Stream(5000,    std::bind(&CommManager::send_low_priority, this)),
-    Stream(0,       std::bind(&CommManager::send_total_torque, this)),
+    Stream(1000,    std::bind(&CommManager::send_total_torque, this))
   };
 
 public:

@@ -97,12 +97,6 @@ public:
     float z;
   };
 
-  struct TotalTorque {
-    float x;
-    float y;
-    float z;
-  };
-
   virtual void init(uint32_t baud_rate) = 0;
   virtual void receive() = 0;
 

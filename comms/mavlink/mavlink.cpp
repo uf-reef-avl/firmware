@@ -61,8 +61,7 @@ void Mavlink::send_total_torque(uint8_t system_id,
                                 float x, float y, float z)
 {
   // Empty code to get rid of the timestamp not used error due to WALL
-  if (timestamp_ms)
-    timestamp_ms = 0;
+  if (timestamp_ms) {}
 
   mavlink_message_t msg;
   mavlink_msg_total_torque_pack(system_id, compid_, &msg, // Can add timestamp here if we care
