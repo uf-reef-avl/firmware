@@ -56,6 +56,9 @@ public:
   void send_total_torque(uint8_t system_id,
                          uint32_t timestamp_ms,
                          float x, float y, float z) override;
+  void send_pid_torque(uint8_t system_id,
+                       uint32_t timestamp_ms,
+                       float x, float y, float z) override;
   void send_attitude_quaternion(uint8_t system_id,
                                 uint64_t timestamp_us,
                                 const turbomath::Quaternion &attitude,

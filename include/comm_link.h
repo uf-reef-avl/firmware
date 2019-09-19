@@ -144,6 +144,7 @@ public:
   virtual void send_timesync(uint8_t system_id, int64_t tc1, int64_t ts1) = 0;
   virtual void send_version(uint8_t system_id, const char * const version) = 0;
   virtual void send_total_torque(uint8_t system_id, uint32_t timestamp_ms, float x, float y, float z) = 0;
+  virtual void send_pid_torque(uint8_t system_id, uint32_t timestamp_ms, float x, float y, float z) = 0;
 
   // register callbacks
 

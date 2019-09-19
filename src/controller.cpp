@@ -119,11 +119,17 @@ void Controller::run()
 
   added_torque_t added_torque = RF_.command_manager_.added_torque();
 
+  // Save pre feedforward torques
+  pid_output_.x = pid_output.x + RF_.params_.get_param_float(PARAM_X_EQ_TORQUE);
+  pid_output_.y = pid_output.y + RF_.params_.get_param_float(PARAM_Y_EQ_TORQUE);
+  pid_output_.z = pid_output.z + RF_.params_.get_param_float(PARAM_Z_EQ_TORQUE);
+  pid_output_.F = RF_.command_manager_.combined_control().F.value;
+
   // Add feedforward torques
-  output_.x = pid_output.x + RF_.params_.get_param_float(PARAM_X_EQ_TORQUE) + added_torque.x;
-  output_.y = pid_output.y + RF_.params_.get_param_float(PARAM_Y_EQ_TORQUE) + added_torque.y;
-  output_.z = pid_output.z + RF_.params_.get_param_float(PARAM_Z_EQ_TORQUE) + added_torque.z;
-  output_.F = RF_.command_manager_.combined_control().F.value;
+  output_.x = pid_output_.x + added_torque.x;
+  output_.y = pid_output_.y + added_torque.y;
+  output_.z = pid_output_.z + added_torque.z;
+  output_.F = pid_output_.F;
 }
 
 void Controller::calculate_equilbrium_torque_from_rc()
