@@ -69,6 +69,19 @@ void Mavlink::send_total_torque(uint8_t system_id,
   send_message(msg);
 }
 
+void Mavlink::send_pid_torque(uint8_t system_id,
+                              uint32_t timestamp_ms,
+                              float x, float y, float z)
+{
+  if (timestamp_ms)
+    timestamp_ms = 0;
+
+  mavlink_message_t msg;
+  mavlink_msg_pid_torque_pack(system_id, compid_, &msg,
+                              x, y, z);
+  send_message(msg);
+}
+
 void Mavlink::send_attitude_quaternion(uint8_t system_id,
                               uint64_t timestamp_us,
                               const turbomath::Quaternion &attitude,

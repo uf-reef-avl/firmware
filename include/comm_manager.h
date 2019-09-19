@@ -118,6 +118,7 @@ private:
   void send_mag(void);
   void send_low_priority(void);
   void send_total_torque(void);
+  void send_pid_torque(void);
 
   // Debugging Utils
   void send_named_value_int(const char *const name, int32_t value);
@@ -137,7 +138,8 @@ private:
     Stream(0,       std::bind(&CommManager::send_output_raw, this)),
     Stream(0,       std::bind(&CommManager::send_rc_raw, this)),
     Stream(5000,    std::bind(&CommManager::send_low_priority, this)),
-    Stream(1000,    std::bind(&CommManager::send_total_torque, this))
+    Stream(1000,    std::bind(&CommManager::send_total_torque, this)),
+    Stream(1000,    std::bind(&CommManager::send_pid_torque, this))
   };
 
 public:

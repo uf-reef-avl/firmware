@@ -508,6 +508,15 @@ void CommManager::send_total_torque(void)
                                RF_.controller_.output().z);
 }
 
+void CommManager::send_pid_torque(void)
+{
+  comm_link_.send_pid_torque(sysid_,
+                             RF_.board.clock_millis(),
+                             RF_.controller_.pid_output().x,
+                             RF_.controller_.pid_output().y,
+                             RF_.controller_.pid_output().z);
+}
+
 CommManager::Stream::Stream(uint32_t period_us, std::function<void(void)> send_function) :
   period_us_(period_us),
   next_time_us_(0),
