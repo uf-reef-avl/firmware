@@ -16,7 +16,7 @@ double sign(double y)
   return (y > 0.0) - (y < 0.0);
 }
 
-double run_estimator_test(std::string filename, ROSflight &rf, testBoard &board, std::vector<double> params)
+double run_estimator_test(std::string filename, ROSflight& rf, testBoard& board, std::vector<double> params)
 {
 #ifndef DEBUG
   (void) filename;
@@ -44,7 +44,7 @@ double run_estimator_test(std::string filename, ROSflight &rf, testBoard &board,
 
   double max_error = 0.0;
   volatile double t = 0.0;
-  while (t < tmax)
+  while(t < tmax)
   {
     // euler integration of S03 (probably a better way that isn't so intensive)
     double ddt = 0.00005;
@@ -57,8 +57,8 @@ double run_estimator_test(std::string filename, ROSflight &rf, testBoard &board,
       double r = z_amp*sin(z_freq/(2.0*M_PI)*t);
 
       omega_skew << 0.0, -r, q,
-                 r, 0.0, -p,
-                 -q, p, 0.0;
+                    r, 0.0, -p,
+                    -q, p, 0.0;
       rotation = rotation*(omega_skew*ddt).exp();
       t += ddt;
     }
@@ -108,8 +108,7 @@ double run_estimator_test(std::string filename, ROSflight &rf, testBoard &board,
     file << estimate.w << ", " << estimate.x << ", " << estimate.y << ", " << estimate.z << ", ";
     file << eig_quat.w() << ", " << eig_quat.x() << ", " << eig_quat.y() << ", " << eig_quat.z() << ", ";
     file << rf.estimator_.state().roll << ", " << rf.estimator_.state().pitch << ", " <<rf.estimator_.state().yaw << ", ";
-    file << rf.estimator_.state().angular_velocity.x << ", " << rf.estimator_.state().angular_velocity.y << ", " <<
-         rf.estimator_.state().angular_velocity.z << ", ";
+    file << rf.estimator_.state().angular_velocity.x << ", " << rf.estimator_.state().angular_velocity.y << ", " << rf.estimator_.state().angular_velocity.z << ", ";
     file << p << ", " << q << ", " << r << ", ";
     file << error << "\n";
 #endif
@@ -124,14 +123,12 @@ double run_estimator_test(std::string filename, ROSflight &rf, testBoard &board,
 }
 
 
-TEST(estimator_test, linear_gyro_integration)
-{
+TEST(estimator_test, linear_gyro_integration) {
   testBoard board;
   Mavlink mavlink(board);
   ROSflight rf(board, mavlink);
 
-  std::vector<double> params =
-  {
+  std::vector<double> params = {
     10.0, // xfreq
     5.0, // yfreq
     0.3, // zfreq
@@ -149,8 +146,7 @@ TEST(estimator_test, linear_gyro_integration)
   rf.params_.set_param_int(PARAM_FILTER_USE_QUAD_INT, false);
   rf.params_.set_param_int(PARAM_FILTER_USE_MAT_EXP, false);
   rf.params_.set_param_int(PARAM_ACC_ALPHA, 0);
-  rf.params_.set_param_int(PARAM_GYRO_XY_ALPHA, 0);
-  rf.params_.set_param_int(PARAM_GYRO_Z_ALPHA, 0);
+  rf.params_.set_param_int(PARAM_GYRO_ALPHA, 0);
 
   double max_error = run_estimator_test("linear_gyro_sim.csv", rf, board, params);
 
@@ -162,14 +158,12 @@ TEST(estimator_test, linear_gyro_integration)
 }
 
 
-TEST(estimator_test, quadratic_gyro_integration)
-{
+TEST(estimator_test, quadratic_gyro_integration) {
   testBoard board;
   Mavlink mavlink(board);
   ROSflight rf(board, mavlink);
 
-  std::vector<double> params =
-  {
+  std::vector<double> params = {
     10.0, // xfreq
     0.1, // yfreq
     0.5, // zfreq
@@ -188,8 +182,7 @@ TEST(estimator_test, quadratic_gyro_integration)
   rf.params_.set_param_int(PARAM_FILTER_USE_QUAD_INT, true);
   rf.params_.set_param_int(PARAM_FILTER_USE_MAT_EXP, false);
   rf.params_.set_param_int(PARAM_ACC_ALPHA, 0);
-  rf.params_.set_param_int(PARAM_GYRO_XY_ALPHA, 0);
-  rf.params_.set_param_int(PARAM_GYRO_Z_ALPHA, 0);
+  rf.params_.set_param_int(PARAM_GYRO_ALPHA, 0);
 
   double max_error = run_estimator_test("quad_int_sim.csv", rf, board, params);
 
@@ -200,14 +193,12 @@ TEST(estimator_test, quadratic_gyro_integration)
 #endif
 }
 
-TEST(estimator_test, mat_exp_integration)
-{
+TEST(estimator_test, mat_exp_integration) {
   testBoard board;
   Mavlink mavlink(board);
   ROSflight rf(board, mavlink);
 
-  std::vector<double> params =
-  {
+  std::vector<double> params = {
     10.0, // xfreq
     0.1, // yfreq
     0.5, // zfreq
@@ -225,8 +216,7 @@ TEST(estimator_test, mat_exp_integration)
   rf.params_.set_param_int(PARAM_FILTER_USE_QUAD_INT, false);
   rf.params_.set_param_int(PARAM_FILTER_USE_MAT_EXP, true);
   rf.params_.set_param_int(PARAM_ACC_ALPHA, 0);
-  rf.params_.set_param_int(PARAM_GYRO_XY_ALPHA, 0);
-  rf.params_.set_param_int(PARAM_GYRO_Z_ALPHA, 0);
+  rf.params_.set_param_int(PARAM_GYRO_ALPHA, 0);
 
   double max_error = run_estimator_test("mat_exp_sim.csv", rf, board, params);
   EXPECT_LE(max_error, params[7]);
@@ -235,14 +225,12 @@ TEST(estimator_test, mat_exp_integration)
 #endif
 }
 
-TEST(estimator_test, mat_exp_quad_int)
-{
+TEST(estimator_test, mat_exp_quad_int) {
   testBoard board;
   Mavlink mavlink(board);
   ROSflight rf(board, mavlink);
 
-  std::vector<double> params =
-  {
+  std::vector<double> params = {
     10.0, // xfreq
     0.1, // yfreq
     0.5, // zfreq
@@ -260,8 +248,7 @@ TEST(estimator_test, mat_exp_quad_int)
   rf.params_.set_param_int(PARAM_FILTER_USE_QUAD_INT, true);
   rf.params_.set_param_int(PARAM_FILTER_USE_MAT_EXP, true);
   rf.params_.set_param_int(PARAM_ACC_ALPHA, 0);
-  rf.params_.set_param_int(PARAM_GYRO_XY_ALPHA, 0);
-  rf.params_.set_param_int(PARAM_GYRO_Z_ALPHA, 0);
+  rf.params_.set_param_int(PARAM_GYRO_ALPHA, 0);
 
   double max_error = run_estimator_test("mat_exp_quad_sim.csv", rf, board, params);
   EXPECT_LE(max_error, params[7]);
@@ -272,14 +259,12 @@ TEST(estimator_test, mat_exp_quad_int)
 }
 
 
-TEST(estimator_test, accel)
-{
+TEST(estimator_test, accel) {
   testBoard board;
   Mavlink mavlink(board);
   ROSflight rf(board, mavlink);
 
-  std::vector<double> params =
-  {
+  std::vector<double> params = {
     10.0, // xfreq
     0.1, // yfreq
     0.5, // zfreq
@@ -298,8 +283,7 @@ TEST(estimator_test, accel)
   rf.params_.set_param_int(PARAM_FILTER_USE_QUAD_INT, false);
   rf.params_.set_param_int(PARAM_FILTER_USE_MAT_EXP, false);
   rf.params_.set_param_int(PARAM_ACC_ALPHA, 0);
-  rf.params_.set_param_int(PARAM_GYRO_XY_ALPHA, 0);
-  rf.params_.set_param_int(PARAM_GYRO_Z_ALPHA, 0);
+  rf.params_.set_param_int(PARAM_GYRO_ALPHA, 0);
   rf.params_.set_param_int(PARAM_FILTER_KP, 3.0f);
   rf.params_.set_param_int(PARAM_INIT_TIME, 0.0f);
 
@@ -310,14 +294,12 @@ TEST(estimator_test, accel)
 #endif
 }
 
-TEST(estimator_test, all_features)
-{
+TEST(estimator_test, all_features) {
   testBoard board;
   Mavlink mavlink(board);
   ROSflight rf(board, mavlink);
 
-  std::vector<double> params =
-  {
+  std::vector<double> params = {
     10.0, // xfreq
     0.1, // yfreq
     0.5, // zfreq
@@ -336,8 +318,7 @@ TEST(estimator_test, all_features)
   rf.params_.set_param_int(PARAM_FILTER_USE_MAT_EXP, true);
   rf.params_.set_param_float(PARAM_FILTER_KP, 2.0f);
   rf.params_.set_param_float(PARAM_ACC_ALPHA, 0.0f);
-  rf.params_.set_param_float(PARAM_GYRO_XY_ALPHA, 0.0f);
-  rf.params_.set_param_float(PARAM_GYRO_Z_ALPHA, 0.0f);
+  rf.params_.set_param_float(PARAM_GYRO_ALPHA, 0.0f);
   rf.params_.set_param_float(PARAM_GYRO_X_BIAS, 0.0);
   rf.params_.set_param_float(PARAM_GYRO_Y_BIAS, 0.0);
   rf.params_.set_param_float(PARAM_GYRO_Z_BIAS, 0.0); // We don't converge on z bias
@@ -350,15 +331,13 @@ TEST(estimator_test, all_features)
 #endif
 }
 
-TEST(estimator_test, level_bias_sim)
-{
+TEST(estimator_test, level_bias_sim) {
   testBoard board;
   Mavlink mavlink(board);
   ROSflight rf(board, mavlink);
 
 
-  std::vector<double> params =
-  {
+  std::vector<double> params = {
     0.0, // xfreq
     0.0, // yfreq
     0.0, // zfreq
@@ -380,8 +359,7 @@ TEST(estimator_test, level_bias_sim)
   rf.params_.set_param_float(PARAM_FILTER_KP, 2.0f);
   rf.params_.set_param_float(PARAM_FILTER_KI, 0.2f);
   rf.params_.set_param_float(PARAM_ACC_ALPHA, 0.0f);
-  rf.params_.set_param_float(PARAM_GYRO_XY_ALPHA, 0.0f);
-  rf.params_.set_param_float(PARAM_GYRO_Z_ALPHA, 0.0f);
+  rf.params_.set_param_float(PARAM_GYRO_ALPHA, 0.0f);
   rf.params_.set_param_float(PARAM_GYRO_X_BIAS, true_bias.x);
   rf.params_.set_param_float(PARAM_GYRO_Y_BIAS, true_bias.y);
   rf.params_.set_param_float(PARAM_GYRO_Z_BIAS, 0.0); // We don't converge on z bias
@@ -399,15 +377,13 @@ TEST(estimator_test, level_bias_sim)
 #endif
 }
 
-TEST(estimator_test, moving_bias_sim)
-{
+TEST(estimator_test, moving_bias_sim) {
   testBoard board;
   Mavlink mavlink(board);
   ROSflight rf(board, mavlink);
 
 
-  std::vector<double> params =
-  {
+  std::vector<double> params = {
     5.0, // xfreq
     0.5, // yfreq
     0.0, // zfreq
@@ -429,8 +405,7 @@ TEST(estimator_test, moving_bias_sim)
   rf.params_.set_param_float(PARAM_FILTER_KP, 0.5f);
   rf.params_.set_param_float(PARAM_FILTER_KI, 0.05f);
   rf.params_.set_param_float(PARAM_ACC_ALPHA, 0.0f);
-  rf.params_.set_param_float(PARAM_GYRO_XY_ALPHA, 0.0f);
-  rf.params_.set_param_float(PARAM_GYRO_Z_ALPHA, 0.0f);
+  rf.params_.set_param_float(PARAM_GYRO_ALPHA, 0.0f);
   rf.params_.set_param_float(PARAM_GYRO_X_BIAS, true_bias.x);
   rf.params_.set_param_float(PARAM_GYRO_Y_BIAS, true_bias.y);
   rf.params_.set_param_float(PARAM_GYRO_Z_BIAS, 0.0); // We don't converge on z bias

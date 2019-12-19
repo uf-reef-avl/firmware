@@ -29,7 +29,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include <stdint.h>
 
 #include "mixer.h"
@@ -40,13 +39,17 @@ namespace rosflight_firmware
 
 Mixer::Mixer(ROSflight &_rf) :
   RF_(_rf)
-{
-  mixer_to_use_ = nullptr;
-}
+{}
 
 void Mixer::init()
 {
+  RF_.params_.add_callback(std::bind(&Mixer::param_change_callback, this, std::placeholders::_1), PARAM_MOTOR_PWM_SEND_RATE);
+  RF_.params_.add_callback(std::bind(&Mixer::param_change_callback, this, std::placeholders::_1), PARAM_MOTOR_MIN_PWM);
+  RF_.params_.add_callback(std::bind(&Mixer::param_change_callback, this, std::placeholders::_1), PARAM_RC_TYPE);
+  RF_.params_.add_callback(std::bind(&Mixer::param_change_callback, this, std::placeholders::_1), PARAM_MIXER);
+
   init_mixing();
+  init_PWM();
 }
 
 void Mixer::param_change_callback(uint16_t param_id)
@@ -56,12 +59,8 @@ void Mixer::param_change_callback(uint16_t param_id)
   case PARAM_MIXER:
     init_mixing();
     break;
-  case PARAM_MOTOR_PWM_SEND_RATE:
-  case PARAM_RC_TYPE:
-    init_PWM();
-    break;
   default:
-    // do nothing
+    init_PWM();
     break;
   }
 }
@@ -76,40 +75,32 @@ void Mixer::init_mixing()
 
   if (mixer_choice >= NUM_MIXERS)
   {
-    RF_.comm_manager_.log(CommLinkInterface::LogSeverity::LOG_ERROR, "Invalid Mixer Choice");
+    RF_.comm_manager_.log(CommLink::LogSeverity::LOG_ERROR, "Invalid Mixer Choice");
+    mixer_choice = 0;
 
     // set the invalid mixer flag
     RF_.state_manager_.set_error(StateManager::ERROR_INVALID_MIXER);
-    mixer_to_use_ = nullptr;
-  }
-  else
-  {
-    mixer_to_use_ = array_of_mixers_[mixer_choice];
   }
 
+  mixer_to_use_ = array_of_mixers_[mixer_choice];
 
-  init_PWM();
-
-  for (int8_t i = 0; i < NUM_TOTAL_OUTPUTS; i++)
+  for (int8_t i=0; i<8; i++)
   {
     raw_outputs_[i] = 0.0f;
-    outputs_[i] = 0.0f;
+    unsaturated_outputs_[i] = 0.0f;
   }
 }
 
 void Mixer::init_PWM()
 {
-  uint32_t refresh_rate = RF_.params_.get_param_int(PARAM_MOTOR_PWM_SEND_RATE);
-  if (refresh_rate == 0 && mixer_to_use_ != nullptr)
+  bool useCPPM = false;
+  if (RF_.params_.get_param_int(PARAM_RC_TYPE) == 1)
   {
-    refresh_rate = mixer_to_use_->default_pwm_rate;
+    useCPPM = true;
   }
-  int16_t off_pwm = 1000;
-
-  if (mixer_to_use_ == nullptr || refresh_rate == 0)
-    RF_.board_.pwm_init(50, 0);
-  else
-    RF_.board_.pwm_init(refresh_rate, off_pwm);
+  int16_t motor_refresh_rate = RF_.params_.get_param_int(PARAM_MOTOR_PWM_SEND_RATE);
+  int16_t off_pwm = RF_.params_.get_param_int(PARAM_MOTOR_MIN_PWM);
+  RF_.board_.pwm_init(useCPPM, motor_refresh_rate, off_pwm);
 }
 
 
@@ -136,7 +127,9 @@ void Mixer::write_motor(uint8_t index, float value)
     value = 0.0;
   }
   raw_outputs_[index] = value;
-  RF_.board_.pwm_write(index, raw_outputs_[index]);
+  int32_t pwm_us = value * (RF_.params_.get_param_int(PARAM_MOTOR_MAX_PWM) - RF_.params_.get_param_int(
+                              PARAM_MOTOR_MIN_PWM)) + RF_.params_.get_param_int(PARAM_MOTOR_MIN_PWM);
+  RF_.board_.pwm_write(index, pwm_us);
 }
 
 
@@ -151,51 +144,35 @@ void Mixer::write_servo(uint8_t index, float value)
     value = -1.0;
   }
   raw_outputs_[index] = value;
-  RF_.board_.pwm_write(index, raw_outputs_[index] * 0.5 + 0.5);
+  RF_.board_.pwm_write(index, raw_outputs_[index] * 500 + 1500);
 }
 
-void Mixer::set_new_aux_command(aux_command_t new_aux_command)
-{
-  for (uint8_t i = 0; i < NUM_TOTAL_OUTPUTS; i++)
-  {
-    aux_command_.channel[i].type = new_aux_command.channel[i].type;
-    aux_command_.channel[i].value = new_aux_command.channel[i].value;
-  }
-}
 
 void Mixer::mix_output()
 {
   Controller::Output commands = RF_.controller_.output();
   float max_output = 1.0f;
 
-  // Reverse fixed-wing channels just before mixing if we need to
+  // Reverse Fixedwing channels just before mixing if we need to
   if (RF_.params_.get_param_int(PARAM_FIXED_WING))
   {
     commands.x *= RF_.params_.get_param_int(PARAM_AILERON_REVERSE) ? -1 : 1;
     commands.y *= RF_.params_.get_param_int(PARAM_ELEVATOR_REVERSE) ? -1 : 1;
     commands.z *= RF_.params_.get_param_int(PARAM_RUDDER_REVERSE) ? -1 : 1;
   }
-  else if (commands.F < RF_.params_.get_param_float(PARAM_MOTOR_IDLE_THROTTLE))
-  {
-    // For multirotors, disregard yaw commands if throttle is low to prevent motor spin-up while arming/disarming
-    commands.z = 0.0;
-  }
 
-  if (mixer_to_use_ == nullptr)
-    return;
-
-  for (uint8_t i = 0; i < NUM_MIXER_OUTPUTS; i++)
+  for (int8_t i=0; i<8; i++)
   {
     if (mixer_to_use_->output_type[i] != NONE)
     {
       // Matrix multiply to mix outputs
-      outputs_[i] = (commands.F*mixer_to_use_->F[i] + commands.x*mixer_to_use_->x[i] +
-                                 commands.y*mixer_to_use_->y[i] + commands.z*mixer_to_use_->z[i]);
+      unsaturated_outputs_[i] = (commands.F*mixer_to_use_->F[i] + commands.x*mixer_to_use_->x[i] +
+                              commands.y*mixer_to_use_->y[i] + commands.z*mixer_to_use_->z[i]);
 
       // Save off the largest control output if it is greater than 1.0 for future scaling
-      if (outputs_[i] > max_output)
+      if (unsaturated_outputs_[i] > max_output)
       {
-        max_output = outputs_[i];
+        max_output = unsaturated_outputs_[i];
       }
     }
   }
@@ -207,46 +184,20 @@ void Mixer::mix_output()
     scale_factor = 1.0/max_output;
   }
 
-  // Perform Motor Output Scaling
-  for (uint8_t i = 0; i < NUM_MIXER_OUTPUTS; i++)
+
+
+  for (int8_t i=0; i<8; i++)
   {
+    // Write output to motors
+    if (mixer_to_use_->output_type[i] == S)
+    {
+      write_servo(i, unsaturated_outputs_[i]);
+    }
+    else if (mixer_to_use_->output_type[i] == M)
+    {
       // scale all motor outputs by scale factor (this is usually 1.0, unless we saturated)
-      outputs_[i] *= scale_factor;
-  }
-
-  // Insert AUX Commands, and assemble combined_output_types array (Does not override mixer values)
-
-  // For the first NUM_MIXER_OUTPUTS channels, only write aux_command to channels the mixer is not using
-  for (uint8_t i = 0; i < NUM_MIXER_OUTPUTS; i++)
-  {
-    if (mixer_to_use_->output_type[i] == NONE)
-    {
-      outputs_[i] = aux_command_.channel[i].value;
-      combined_output_type_[i] = aux_command_.channel[i].type;
-    }
-    else
-    {
-      combined_output_type_[i] = mixer_to_use_->output_type[i];
-    }
-  }
-
-  // The other channels are never used by the mixer
-  for (uint8_t i = NUM_MIXER_OUTPUTS; i < NUM_TOTAL_OUTPUTS; i++)
-  {
-    outputs_[i] = aux_command_.channel[i].value;
-    combined_output_type_[i] = aux_command_.channel[i].type;
-  }
-
-  // Write to outputs
-  for (uint8_t i = 0; i < NUM_TOTAL_OUTPUTS; i++)
-  {
-    if (combined_output_type_[i] == S)
-    {
-      write_servo(i, outputs_[i]);
-    }
-    else if (combined_output_type_[i] == M)
-    {
-      write_motor(i, outputs_[i]);
+      unsaturated_outputs_[i] *= scale_factor;
+      write_motor(i, unsaturated_outputs_[i]);
     }
   }
 }

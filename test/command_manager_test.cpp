@@ -10,8 +10,20 @@
 
 using namespace rosflight_firmware;
 
-TEST(command_manager_test, rc)
+// Initialize the full firmware, so that the state_manager can do its thing
+void step_firmware(ROSflight& rf, testBoard& board, uint32_t us)
 {
+  uint64_t start_time_us = board.clock_micros();
+  float dummy_acc[3] = {0, 0, -9.80665};
+  float dummy_gyro[3] = {0, 0, 0};
+  while(board.clock_micros() < start_time_us + us)
+  {
+    board.set_imu(dummy_acc, dummy_gyro, board.clock_micros() + 1000);
+    rf.run();
+  }
+}
+
+TEST(command_manager_test, rc) {
   testBoard board;
   Mavlink mavlink(board);
   ROSflight rf(board, mavlink);
@@ -26,7 +38,6 @@ TEST(command_manager_test, rc)
   }
   rc_values[2] = 1000;
 
-  rf.params_.set_param_int(PARAM_MIXER, 10);
   float max_roll = rf.params_.get_param_float(PARAM_RC_MAX_ROLL);
   float max_pitch = rf.params_.get_param_float(PARAM_RC_MAX_PITCH);
   float max_yawrate = rf.params_.get_param_float(PARAM_RC_MAX_YAWRATE);
@@ -68,8 +79,7 @@ TEST(command_manager_test, rc)
 }
 
 
-TEST(command_manager_test, rc_arm_disarm)
-{
+TEST(command_manager_test, rc_arm_disarm) {
   testBoard board;
   Mavlink mavlink(board);
   ROSflight rf(board, mavlink);
@@ -87,7 +97,6 @@ TEST(command_manager_test, rc_arm_disarm)
   }
   rc_values[2] = 1000;
 
-  rf.params_.set_param_int(PARAM_MIXER, 10);
   float max_roll = rf.params_.get_param_float(PARAM_RC_MAX_ROLL);
   float max_pitch = rf.params_.get_param_float(PARAM_RC_MAX_PITCH);
   float max_yawrate = rf.params_.get_param_float(PARAM_RC_MAX_YAWRATE);
@@ -242,8 +251,7 @@ TEST(command_manager_test, rc_arm_disarm)
 }
 
 
-TEST(command_manager_test, rc_failsafe_test)
-{
+TEST(command_manager_test, rc_failsafe_test) {
   testBoard board;
   Mavlink mavlink(board);
   ROSflight rf(board, mavlink);
@@ -261,7 +269,6 @@ TEST(command_manager_test, rc_failsafe_test)
   }
   rc_values[2] = 1000;
 
-  rf.params_.set_param_int(PARAM_MIXER, 10);
   float max_roll = rf.params_.get_param_float(PARAM_RC_MAX_ROLL);
   float max_pitch = rf.params_.get_param_float(PARAM_RC_MAX_PITCH);
   float max_yawrate = rf.params_.get_param_float(PARAM_RC_MAX_YAWRATE);
@@ -382,8 +389,7 @@ TEST(command_manager_test, rc_failsafe_test)
 #define RC_X_PWM 1800
 #define RC_X ((RC_X_PWM - 1500)/500.0 * rf.params_.get_param_float(PARAM_RC_MAX_ROLL))
 
-TEST(command_manager_test, rc_offboard_muxing_test)
-{
+TEST(command_manager_test, rc_offboard_muxing_test ) {
 
   testBoard board;
   Mavlink mavlink(board);
@@ -394,7 +400,6 @@ TEST(command_manager_test, rc_offboard_muxing_test)
 
   // Initialize the firmware
   rf.init();
-  rf.params_.set_param_int(PARAM_MIXER, 10);
   rf.params_.set_param_int(PARAM_RC_OVERRIDE_TAKE_MIN_THROTTLE, false);
 
   uint16_t rc_values[8];
@@ -568,7 +573,7 @@ TEST(command_manager_test, rc_offboard_muxing_test)
   //=================================================
 
   start_ms = board.clock_millis();
-  while (board.clock_millis() < rf.params_.get_param_int(PARAM_OFFBOARD_TIMEOUT) + start_ms)
+  while (board.clock_millis() < 100 + start_ms)
   {
     output = rf.command_manager_.combined_control();
     EXPECT_CLOSE(output.x.value, OFFBOARD_X);  // Offboard Command is still valid
@@ -587,8 +592,7 @@ TEST(command_manager_test, rc_offboard_muxing_test)
 }
 
 
-TEST(command_manager_test, partial_muxing_test)
-{
+TEST(command_manager_test, partial_muxing_test ) {
 
   testBoard board;
   Mavlink mavlink(board);
@@ -606,7 +610,6 @@ TEST(command_manager_test, partial_muxing_test)
     rc_values[i] = 1500;
   }
   rc_values[2] = 1000;
-  rf.params_.set_param_int(PARAM_MIXER, 10);
 
   // Let's clear all errors in the state_manager
   rf.state_manager_.clear_error(rf.state_manager_.state().error_codes);
@@ -627,8 +630,7 @@ TEST(command_manager_test, partial_muxing_test)
   };
 
   // step a bunch of times to clear the "lag time" on RC
-  board.set_rc(rc_values);
-  while (board.clock_micros() < 2000000)
+  while (board.clock_micros() < 1000000)
   {
     step_firmware(rf, board, 20000);
   }
@@ -670,7 +672,7 @@ TEST(command_manager_test, partial_muxing_test)
   EXPECT_CLOSE(output.F.value, OFFBOARD_F);
 
 
-  // Now, let's disable the pitch channel on the companion command
+  // Now, let's disable the pitch channel on the onboard command
   offboard_command.y.active = false;
   offboard_command.stamp_ms = board.clock_millis();
   rf.command_manager_.set_new_offboard_command(offboard_command);

@@ -29,53 +29,83 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROSFLIGHT_FIRMWARE_TEST_BOARD_H
-#define ROSFLIGHT_FIRMWARE_TEST_BOARD_H
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
 
-#include "board.h" 
-
-namespace rosflight_firmware
+extern "C"
 {
+#include <breezystm32.h>
+}
 
-class testBoard : public Board
+#include "board.h"
+
+namespace rosflight_firmware {
+
+class Naze32 : public Board
 {
 
 private:
-  uint16_t rc_values[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-  uint64_t time_us_ = 0;
-  bool rc_lost_ = false;
-  float acc_[3] = {0, 0, 0};
-  float gyro_[3] = {0, 0, 0};
-  bool new_imu_ = false;
+  serialPort_t *Serial1;
+
+  std::function<void(void)> imu_callback_;
+
+  int _board_revision = 2;
+
+  float _accel_scale = 1.0;
+  float _gyro_scale = 1.0;
+
+  enum
+  {
+    SONAR_NONE,
+    SONAR_I2C,
+    SONAR_PWM
+  };
+  uint8_t sonar_type = SONAR_NONE;
+
+  enum
+  {
+    BARO_NONE,
+    BARO_BMP280,
+    BARO_MS5611
+  };
+  uint8_t baro_type = BARO_NONE;
+
+
 
 public:
-// setup
+  Naze32();
+
+  bool new_imu_data_;
+  uint64_t imu_time_us_;
+
+  // setup
   void init_board(void);
   void board_reset(bool bootloader);
 
-// clock
+  // clock
   uint32_t clock_millis();
   uint64_t clock_micros();
   void clock_delay(uint32_t milliseconds);
 
-// serial
+  // serial
   void serial_init(uint32_t baud_rate);
   void serial_write(const uint8_t *src, size_t len);
   uint16_t serial_bytes_available(void);
   uint8_t serial_read(void);
 
-// sensors
+  // sensors
   void sensors_init();
-  uint16_t num_sensor_errors(void) ;
+  uint16_t num_sensor_errors(void);
 
   bool new_imu_data();
-  bool imu_read(float accel[3], float *temperature, float gyro[3], uint64_t* time);
-  void imu_not_responding_error(void);
+  bool imu_read(float accel[3], float* temperature, float gyro[3], uint64_t* time_us);
+  void imu_not_responding_error();
 
   bool mag_check(void);
   void mag_read(float mag[3]);
 
-  bool baro_check(void);
+  bool baro_check();
   void baro_read(float *pressure, float *temperature);
 
   bool diff_pressure_check(void);
@@ -84,19 +114,19 @@ public:
   bool sonar_check(void);
   float sonar_read(void);
 
-// PWM
-// TODO make these deal in normalized (-1 to 1 or 0 to 1) values (not pwm-specific)
+  // PWM
+  // TODO make these deal in normalized (-1 to 1 or 0 to 1) values (not pwm-specific)
   void pwm_init(bool cppm, uint32_t refresh_rate, uint16_t idle_pwm);
   bool pwm_lost();
   uint16_t pwm_read(uint8_t channel);
   void pwm_write(uint8_t channel, uint16_t value);
 
-// non-volatile memory
+  // non-volatile memory
   void memory_init(void);
-  bool memory_read(void *dest, size_t len);
-  bool memory_write(const void *src, size_t len);
+  bool memory_read(void * dest, size_t len);
+  bool memory_write(const void * src, size_t len);
 
-// LEDs
+  // LEDs
   void led0_on(void);
   void led0_off(void);
   void led0_toggle(void);
@@ -104,16 +134,6 @@ public:
   void led1_on(void);
   void led1_off(void);
   void led1_toggle(void);
-
-
-
-  void set_imu(float* acc, float* gyro, uint64_t time_us);
-  void set_rc(uint16_t* values);
-  void set_time(uint64_t time_us);
-  void set_pwm_lost(bool lost);
-
 };
 
-} // namespace rosflight_firmware
-
-#endif // ROSLFIGHT_FIRMWARE_TEST_BOARD_H
+}

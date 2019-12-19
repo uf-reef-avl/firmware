@@ -29,58 +29,32 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#################################
-# GNU ARM Embedded Toolchain
-#################################
-BOARD  ?= REVO
+# You probably shouldn't modify anything below here!
+
+TARGET = rosflight
+
+# Compile-time options
+BOARD   ?= naze
 
 # Debugger options, must be empty or GDB
 DEBUG ?=
 
 # Serial port/device for flashing
-SERIAL_DEVICE	?= /dev/ttyACM0
+SERIAL_DEVICE	?= /dev/ttyUSB0
 
-# Set proper number of jobs for the computer
-PARALLEL_JOBS	:= $(shell grep -c ^processor /proc/cpuinfo)
+PARALLEL_JOBS	?= 4
 
-#################################
-# Board Selection
-#################################
-# List of valid boards (update with new boards)
-VALID_F1_BOARDS = NAZE
-VALID_F4_BOARDS = REVO
-
-# Make sure that the supplied board is supported, and if so,
-# set the proper board directory
-ifeq ($(BOARD),$(filter $(BOARD),$(VALID_F4_BOARDS)))
-BOARD_DIR=boards/airbourne
-endif
-
-ifeq ($(BOARD),$(filter $(BOARD),$(VALID_F1_BOARDS)))
-BOARD_DIR=boards/breezy
-endif
-
-ifeq ($(BOARD_DIR),)
-$(info Invalid BOARD: $(BOARD))
-$(info =================================)
-$(info VALID F1 BOARDS:)
-$(info $(VALID_F1_BOARDS))
-$(info =================================)
-$(info VALID F4 BOARDS:)
-$(info $(VALID_F4_BOARDS))
-$(info =================================)
-else
-$(info Building ROSflight $(BOARD_DIR))
-endif
+# Build configuration
+BOARD_DIR = boards/$(BOARD)
 
 .PHONY: all flash clean
 
+
 all:
-	cd $(BOARD_DIR) && make -j$(PARALLEL_JOBS) -l$(PARALLEL_JOBS) DEBUG=$(DEBUG) SERIAL_DEVICE=$(SERIAL_DEVICE)
+		cd $(BOARD_DIR) && make -j$(PARALLEL_JOBS) DEBUG=$(DEBUG) SERIAL_DEVICE=$(SERIAL_DEVICE)
 
 clean:
-	cd boards/airbourne && make clean
-	cd boards/breezy && make clean
+		cd $(BOARD_DIR) && make clean
 
 flash:
-	cd $(BOARD_DIR) && make -j$(PARALLEL_JOBS) -l$(PARALLEL_JOBS) DEBUG=$(DEBUG) SERIAL_DEVICE=$(SERIAL_DEVICE) flash
+		cd $(BOARD_DIR) && make flash

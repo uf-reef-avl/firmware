@@ -35,14 +35,20 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "interface/param_listener.h"
-
 #include "rc.h"
 
 namespace rosflight_firmware
 {
 
 class ROSflight;
+
+typedef struct
+{
+  uint32_t stamp_ms;
+  float x;
+  float y;
+  float z;
+} added_torque_t;
 
 typedef enum
 {
@@ -68,7 +74,7 @@ typedef struct
   control_channel_t F;
 } control_t;
 
-class CommandManager : public ParamListenerInterface
+class CommandManager
 {
 
 private:
@@ -86,6 +92,14 @@ private:
     {&rc_command_.y, &offboard_command_.y, &combined_command_.y},
     {&rc_command_.z, &offboard_command_.z, &combined_command_.z},
     {&rc_command_.F, &offboard_command_.F, &combined_command_.F}
+  };
+
+  added_torque_t added_torque_ =
+  {
+    0,
+    0.0f,
+    0.0f,
+    0.0f
   };
 
   control_t rc_command_ =
@@ -157,14 +171,14 @@ private:
     { RC::STICK_Z, 0 }
   };
 
-  ROSflight &RF_;
+  ROSflight& RF_;
 
   bool new_command_;
   bool rc_override_;
 
-  control_t &failsafe_command_;
+  control_t& failsafe_command_;
 
-  void param_change_callback(uint16_t param_id) override;
+  void param_change_callback(uint16_t param_id);
   void init_failsafe();
 
   bool do_roll_pitch_yaw_muxing(MuxChannel channel);
@@ -176,16 +190,18 @@ private:
 
 public:
 
-  CommandManager(ROSflight &_rf);
+  CommandManager(ROSflight& _rf);
   void init();
   bool run();
   bool rc_override_active();
   bool offboard_control_active();
+  void set_new_added_torque(added_torque_t new_added_torque);
   void set_new_offboard_command(control_t new_offboard_command);
   void set_new_rc_command(control_t new_rc_command);
   void override_combined_command_with_rc();
-  inline const control_t &combined_control() const { return combined_command_; }
-  inline const control_t &rc_control() const { return rc_command_; }
+  inline const added_torque_t added_torque() const { return added_torque_; }
+  inline const control_t& combined_control() const { return combined_command_; }
+  inline const control_t& rc_control() const { return rc_command_; }
 };
 
 } // namespace rosflight_firmware
