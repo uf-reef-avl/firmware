@@ -37,6 +37,8 @@
 
 #include <turbomath/turbomath.h>
 
+#include "interface/param_listener.h"
+
 #include "command_manager.h"
 #include "estimator.h"
 
@@ -45,7 +47,7 @@ namespace rosflight_firmware
 
 class ROSflight;
 
-class Controller
+class Controller : public ParamListenerInterface
 {
 public:
   struct Output
@@ -56,16 +58,15 @@ public:
     float z;
   };
 
-  Controller(ROSflight& rf);
+  Controller(ROSflight &rf);
 
-  inline const Output& output() const { return output_; }
-  inline const Output& pid_output() const { return pid_output_; }
+  inline const Output &output() const { return output_; }
 
   void init();
   void run();
 
   void calculate_equilbrium_torque_from_rc();
-  void param_change_callback(uint16_t param_id);
+  void param_change_callback(uint16_t param_id) override;
 
 private:
   class PID
@@ -90,12 +91,14 @@ private:
     float tau_;
   };
 
-  ROSflight& RF_;
+  ROSflight &RF_;
 
-  turbomath::Vector run_pid_loops(uint32_t dt, const Estimator::State& state, const control_t& command, bool update_integrators);
+  turbomath::Vector run_pid_loops(uint32_t dt,
+                                  const Estimator::State &state,
+                                  const control_t &command,
+                                  bool update_integrators);
 
   Output output_;
-  Output pid_output_;
 
   PID roll_;
   PID roll_rate_;

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 __author__ = "James Jackson"
 __copyright__ = "Copyright 2017, ROSflight"
@@ -9,7 +9,7 @@ __email__ = "superjax08@gmail.com"
 
 import re
 
-f = open('src/param.cpp')
+f = open('../src/param.cpp')
 text = f.read()
 
 
