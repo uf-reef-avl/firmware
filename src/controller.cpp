@@ -100,8 +100,6 @@ void Controller::run()
   // Run the PID loops
   turbomath::Vector pid_output = run_pid_loops(dt_us, RF_.estimator_.state(), RF_.command_manager_.combined_control(), update_integrators);
 
-  added_torque_t added_torque = RF_.command_manager_.added_torque();
-
   // Save pre feedforward torques
   pid_output_.x = pid_output.x + RF_.params_.get_param_float(PARAM_X_EQ_TORQUE);
   pid_output_.y = pid_output.y + RF_.params_.get_param_float(PARAM_Y_EQ_TORQUE);
@@ -109,9 +107,9 @@ void Controller::run()
   pid_output_.F = RF_.command_manager_.combined_control().F.value;
 
   // Add feedforward torques
-  output_.x = pid_output_.x + added_torque.x;
-  output_.y = pid_output_.y + added_torque.y;
-  output_.z = pid_output_.z + added_torque.z;
+  output_.x = pid_output_.x + RF_.command_manager_.added_torque().x;
+  output_.y = pid_output_.y + RF_.command_manager_.added_torque().y;
+  output_.z = pid_output_.z + RF_.command_manager_.added_torque().z;
   output_.F = pid_output_.F;
 }
 

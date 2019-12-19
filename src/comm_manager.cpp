@@ -385,7 +385,7 @@ void CommManager::aux_command_callback(const CommLinkInterface::AuxCommand &comm
   RF_.mixer_.set_new_aux_command(new_aux_command);
 }
 
-void CommManager::attitude_correction_callback(const turbomath::Quaternion &q)
+void CommManager::external_attitude_callback(const turbomath::Quaternion &q)
 {
   RF_.estimator_.set_attitude_correction(q);
 }
