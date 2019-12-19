@@ -141,9 +141,9 @@ private:
   void offboard_control_callback(const CommLinkInterface::OffboardControl& control) override;
   void aux_command_callback(const CommLinkInterface::AuxCommand &command) override;
   void attitude_correction_callback(const turbomath::Quaternion &q) override;
-  void heartbeat_callback() override;
   void added_torque_callback(const CommLinkInterface::AddedTorque& torque) override;
-
+  void heartbeat_callback() override;
+  
 
   void send_heartbeat(void);
   void send_status(void);

@@ -96,7 +96,7 @@ private:
     {&rc_command_.F, &offboard_command_.F, &combined_command_.F}
   };
 
-  added_torque_t added_torque =
+  added_torque_t added_torque_ =
   {
     0,
     0.0f,

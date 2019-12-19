@@ -115,14 +115,13 @@ private:
   void handle_msg_param_request_read(const mavlink_message_t *const msg);
   void handle_msg_param_set(const mavlink_message_t *const msg);
   void handle_msg_offboard_control(const mavlink_message_t *const msg);
-  void handle_msg_attitude_correction(const mavlink_message_t *const msg);
+  void handle_msg_external_attitude(const mavlink_message_t *const msg);
   void handle_msg_rosflight_cmd(const mavlink_message_t *const msg);
   void handle_msg_rosflight_aux_cmd(const mavlink_message_t *const msg);
   void handle_msg_timesync(const mavlink_message_t *const msg);
   void handle_msg_heartbeat(const mavlink_message_t * const msg);
   void handle_msg_added_torque(const mavlink_message_t *const msg);
   void handle_mavlink_message(void);
-  void handle_mavlink_message();
 
   Board& board_;
 

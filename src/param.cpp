@@ -139,7 +139,7 @@ void Params::set_defaults(void)
   init_param_int(PARAM_STREAM_RC_RAW_RATE, "STRM_RC", 50); // Rate of raw RC input stream | 0 | 50
 
   init_param_int(PARAM_STREAM_TOTAL_TORQUE_RATE, "STRM_T_TOR", 50);
-  init_param_int(PARAM_STREAM_PID_RATE, "STRM_PIDRT", 50);
+  init_param_int(PARAM_STREAM_PID_TORQUE_RATE, "STRM_PIDRT", 50);
 
   /********************************/
   /*** CONTROLLER CONFIGURATION ***/

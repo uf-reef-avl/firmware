@@ -249,7 +249,7 @@ bool CommandManager::offboard_control_active()
 
 void CommandManager::set_new_added_torque(added_torque_t new_added_torque)
 {
-  added_torque = new_added_torque;
+  added_torque_ = new_added_torque;
 }
 
 void CommandManager::set_new_offboard_command(control_t new_offboard_command)
